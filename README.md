@@ -1,8 +1,6 @@
 # Bluecat
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/bluecat`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+This gem wraps certain operations with the Bluecat Address Management API via `savon`. I use this specifically to integrate with [Foreman](https://theforeman.org) so there is a lot that this gem cannot do, yet. That said, I am open to pull requests to add more features. 
 
 ## Installation
 
@@ -22,17 +20,53 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```ruby
+require 'bluecat'
+require 'pp'
 
-## Development
+client = Bluecat::Client.new(wsdl: 'https://hostname/Services/API?wsdl')
+client.login('api-username', 'api-password')
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+# This is the object ID of where to start
+# your search.
+container_id = 1
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+pp client.networks(container_id).to_a
+
+client.logout
+```
+
+It is a "best practice" (according to Bluecat's documentation) to logout at the end of a session. When I use this in other projects, I might expose it like so:
+
+```ruby
+class SomeUseCase
+  # All access to API happens through this method
+  def bluecat
+    username = HammerCLI::Settings.get(:bluecat, :username)
+    password = HammerCLI::Settings.get(:bluecat, :password)
+
+    client = Bluecat::Client.new(wsdl: HammerCLI::Settings.get(:bluecat, :wsdl))
+    client.login(username, password)
+
+    yield client
+
+    client.logout
+  end
+  
+  def execute
+    bluecat do |client|
+      # Do things with the client
+      client.networks(@container_id).take(10)
+    end 
+  end
+end
+```
+
+In this way, the client will log in and out for every operation. This may not be best for your use-case.
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/bluecat.
+Bug reports and pull requests are welcome on GitHub at https://github.com/mdwheele/bluecat.
 
 
 ## License
