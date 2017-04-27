@@ -31,7 +31,7 @@ client.login('api-username', 'api-password')
 # your search.
 container_id = 1
 
-pp client.networks(container_id).to_a
+pp client.ip4_networks(container_id).to_a
 
 client.logout
 ```
@@ -56,7 +56,7 @@ class SomeUseCase
   def execute
     bluecat do |client|
       # Do things with the client
-      client.networks(@container_id).take(10)
+      client.ip4_networks(@container_id).take(10)
     end 
   end
 end
